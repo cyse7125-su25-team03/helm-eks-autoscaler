@@ -1,0 +1,30 @@
+# Helm dependency charts (downloaded by helm dependency update)
+charts/
+
+# Packaged chart archives
+*.tgz
+
+# Helm release output
+dist/
+
+# Local values override files (contain sensitive data)
+values.local.yaml
+values.override.yaml
+*-secrets.yaml
+
+# Rendered templates output (from helm template command)
+rendered/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak

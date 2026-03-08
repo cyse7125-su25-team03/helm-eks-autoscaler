@@ -1,0 +1,110 @@
+# -----------------------------------------------------------
+# Cluster Autoscaler — values.yaml (EKS / AWS)
+# -----------------------------------------------------------
+
+replicaCount: 2
+
+# Cloud provider
+cloudProvider: aws
+
+# Auto-discovery — tags your ASGs must have:
+#   k8s.io/cluster-autoscaler/enabled: "true"
+#   k8s.io/cluster-autoscaler/<CLUSTER_NAME>: "owned"
+autoDiscovery:
+  clusterName: cve-cluster   # override via --set or terraform helm_release values
+
+awsRegion: us-east-1
+
+# Extra CLI args passed to the autoscaler binary
+extraArgs:
+  logtostderr: true
+  stderrthreshold: info
+  v: 4
+  skip-nodes-with-local-storage: false
+  expander: least-waste
+  balance-similar-node-groups: true
+  skip-nodes-with-system-pods: true
+  scale-down-enabled: true
+  scale-down-delay-after-add: 10m
+  scale-down-unneeded-time: 10m
+
+# -----------------------------------------------------------
+# Service Account & IRSA (IAM Roles for Service Accounts)
+# -----------------------------------------------------------
+rbac:
+  create: true
+  serviceAccount:
+    create: true
+    name: cluster-autoscaler
+    annotations:
+      # Set this to your IRSA role ARN via terraform/helm_release
+      eks.amazonaws.com/role-arn: arn:aws:iam::515966523106:role/cluster-autoscaler-role  # e.g. arn:aws:iam::123456789:role/cluster-autoscaler
+
+# -----------------------------------------------------------
+# Resource Requests & Limits  (Assignment requirement)
+# -----------------------------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 600Mi
+  limits:
+    cpu: 200m
+    memory: 1Gi
+
+# -----------------------------------------------------------
+# Pod Affinity / Anti-Affinity  (Assignment requirement)
+# Spread replicas across different AZs
+# -----------------------------------------------------------
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - cluster-autoscaler
+        topologyKey: topology.kubernetes.io/zone
+
+# -----------------------------------------------------------
+# Priority & Disruption
+# -----------------------------------------------------------
+
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+
+# -----------------------------------------------------------
+# Security Context
+# -----------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+
+# -----------------------------------------------------------
+# Service
+# -----------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 8085
+  annotations: {}
+
+# -----------------------------------------------------------
+# Tolerations — allow scheduling on control-plane nodes if needed
+# -----------------------------------------------------------
+tolerations: []
+
+# -----------------------------------------------------------
+# Node Selector
+# -----------------------------------------------------------
+nodeSelector: {}
+
+# -----------------------------------------------------------
+# Additional environment variables
+# -----------------------------------------------------------
+extraEnv: []
+# - name: AWS_STS_REGIONAL_ENDPOINTS
+#   value: regional
+
