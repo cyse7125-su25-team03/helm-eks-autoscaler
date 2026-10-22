@@ -1,0 +1,34 @@
+# Test pod for the Cluster Autoscaler.
+#
+# Nodes are t3.large (1930m allocatable CPU, ~180m taken by DaemonSets on a
+# fresh node). The most free CPU on any current node is ~1140m, so a 1500m
+# request cannot be scheduled today but fits on a new node -> forces scale-up.
+#
+#   kubectl apply -f autoscaler-test-pod.yaml
+#   kubectl delete -f autoscaler-test-pod.yaml   # then watch for scale-down
+apiVersion: v1
+kind: Pod
+metadata:
+  name: autoscaler-test
+  namespace: default
+  labels:
+    app: autoscaler-test
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.10   # does nothing; only holds the reservation
+      resources:
+        requests:
+          cpu: 1500m
+          memory: 64Mi
+        limits:
+          cpu: 1500m
+          memory: 64Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 65535
+        capabilities:
+          drop: ["ALL"]
+  terminationGracePeriodSeconds: 0
