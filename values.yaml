@@ -7,11 +7,20 @@ replicaCount: 2
 # Cloud provider
 cloudProvider: aws
 
+# Image — the autoscaler minor version should match the cluster's Kubernetes
+# minor version. The cluster runs EKS 1.37, but no cluster-autoscaler 1.37
+# release exists yet (newest: 1.36.1, 2026-07-23), so this runs one minor
+# behind. Upgrade to v1.37.x when it is published.
+image:
+  repository: registry.k8s.io/autoscaling/cluster-autoscaler
+  tag: v1.36.1
+  pullPolicy: IfNotPresent
+
 # Auto-discovery — tags your ASGs must have:
 #   k8s.io/cluster-autoscaler/enabled: "true"
 #   k8s.io/cluster-autoscaler/<CLUSTER_NAME>: "owned"
 autoDiscovery:
-  clusterName: cve-cluster   # override via --set or terraform helm_release values
+  clusterName: eks-cluster   # override via --set or terraform helm_release values
 
 awsRegion: us-east-1
 
@@ -38,7 +47,7 @@ rbac:
     name: cluster-autoscaler
     annotations:
       # Set this to your IRSA role ARN via terraform/helm_release
-      eks.amazonaws.com/role-arn: arn:aws:iam::515966523106:role/cluster-autoscaler-role  # e.g. arn:aws:iam::123456789:role/cluster-autoscaler
+      eks.amazonaws.com/role-arn: arn:aws:iam::904233126829:role/cluster-autoscaler-role  # e.g. arn:aws:iam::123456789:role/cluster-autoscaler
 
 # -----------------------------------------------------------
 # Resource Requests & Limits  (Assignment requirement)
@@ -63,7 +72,7 @@ affinity:
             - key: app.kubernetes.io/name
               operator: In
               values:
-                - cluster-autoscaler
+                - aws-cluster-autoscaler   # label the chart sets on cloudProvider=aws pods
         topologyKey: topology.kubernetes.io/zone
 
 # -----------------------------------------------------------
